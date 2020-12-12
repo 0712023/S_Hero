@@ -1,7 +1,6 @@
 #python3 demo.py resources/models/snowboy.umdl
 #snowboydecoer.py must be at the same path with initiate.py
 
-
 import snowboydecoder
 import sys
 import signal
