@@ -13,7 +13,6 @@ def on_message(client, userdata, msg):
     global signal
     signal = msg.payload
 
-
 client = mqtt.Client()                      #create client object
 client.on_connect = on_connect      #set callback
 client.on_message = on_message #set callback
