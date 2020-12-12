@@ -51,7 +51,6 @@ while True:
     controlsub.loop_start()
     servopub.loop_start()
     if sign == b'111':
-        controlpub.publish("/conveyorstate", "111111") #conveyer belt is operating
         if GPIO.input(11) == 1: #product not exist in front of camera
             n = 0
         elif GPIO.input(11) == 0: #product exist in front of camera
@@ -60,7 +59,7 @@ while True:
             print('product arrived')
             p += 1
             #function start
-            time.sleep(0.3)
+            time.sleep(0.5)
             print('start circle detection')
             with picamera.PiCamera() as camera:
                 camera.resolution = (640, 480)
@@ -68,30 +67,25 @@ while True:
                 camera.capture(image, 'bgr')
                 #start circledetection
                 image_gray = cv.cvtColor(image, cv.COLOR_BGR2GRAY)
-                circles = cv.HoughCircles(image_gray, cv.HOUGH_GRADIENT, 1, 40, np.array([]), 50, 200, 100, 120)
+                circles = cv.HoughCircles(image_gray, cv.HOUGH_GRADIENT, 1, 40, np.array([]), 50, 190, 100, 120)
                 if len(circles.shape) == 3:
                     a, b, c = circles.shape
                     result = "1" #result adequate
                     servopub.publish("/servo", "22") #22 means product is adquate
+                    controlpub.publish("/sql", "id=x+timestamp=06/12/2018+topic=1+data=1") #server connection : topic is 1 and data is 1
                 else:
                     b = 0
                     result = "0" #result defective
                     servopub.publish("/servo", "33") #33 means product is defective
+                    controlpub.publish("/sql", "id=x+timestamp=06/12/2018+topic=1+data=0") #server connection : topic is 1 and data is 0
                 for i in range(b):
                     cv.circle(image, (circles[0][i][0], circles[0][i][1]), circles[0][i][2], (0, 0, 255), 3, cv.LINE_AA)
                 print(result)
-            #save result at log.txt
-            print('saving result')
-            p1 = str(p)
-            log = open('/home/pi/coding/results.txt', "a")
-            log.write(p1 + ","+ result + '\n')
-            log.close()
             #save image
             print('saving product picture')
-            name = p1 + '.jpg'
+            name = str(p) + '.jpg'
             cv.imwrite(name, image)
             #function end
-    controlpub.publish("/conveyorstate", "000000") #conveyer belt is not operating
     controlpub.loop_stop()
     controlsub.loop_stop()
     servopub.loop_stop()
