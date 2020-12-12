@@ -1,4 +1,4 @@
-#python3 demo.py resources/models/snowboy.umdl
+#python3 demo.py resources/models/snowboy1.umdl resources/models/snowboy2.umdl
 #snowboydecoer.py must be at the same path with initiate.py
 
 
@@ -8,40 +8,45 @@ import signal
 
 interrupted = False
 
-#interrupted destroy the main loop
+
 def signal_handler(signal, frame):
     global interrupted
     interrupted = True
 
-#callback function when interrupted
+
 def interrupt_callback():
     global interrupted
     return interrupted
 
-#error detect. if there is no errer, delete below code
-if len(sys.argv) == 1:
-    print("Error: need to specify model name")
-    print("Usage: python demo.py your.model")
+if len(sys.argv) != 3:
+    print("Error: need to specify 2 model names")
+    print("Usage: python demo.py 1st.model 2nd.model")
     sys.exit(-1)
-######################################################
 
-#resource from command line
-model = sys.argv[1]
+models = sys.argv[1:]
+print(models)
 
-# interrupting signal is 'Ctrl + V'
+# capture SIGINT signal, e.g., Ctrl+C
 signal.signal(signal.SIGINT, signal_handler)
 
-#define hotword detecting function
-detector = snowboydecoder.HotwordDetector(model, sensitivity=0.5)
+sensitivity = [0.5]
+detector = snowboydecoder.HotwordDetector(models, sensitivity=sensitivity)
 
-#define callback function
-def callback():
+def callback1(): #initiate detected
     log = open('/home/pi/test.txt', "a")
     log.write("start function\n")
     log.close()
 
+def callback2(): #stop detected
+    log = open('/home/pi/test.txt', "a")
+    log.write("break loop\n")
+    log.close()
+
+callbacks = [callback1, callback2]
+
 # main loop
-detector.start(detected_callback=callback,
+# make sure you have the same numbers of callbacks and models
+detector.start(detected_callback=callbacks,
                interrupt_check=interrupt_callback,
                sleep_time=0.03)
 
