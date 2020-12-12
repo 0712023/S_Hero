@@ -1,64 +1,33 @@
-# import the necessary packages
-from picamera.array import PiRGBArray
-from picamera import PiCamera
-import time
-import cv2 as cv
+import picamera
 import numpy as np
+import cv2 as cv
 
-# initialize the camera and grab a reference to the raw camera capture
-camera = PiCamera()
-camera.resolution = (640, 480)
-camera.framerate = 32
-rawCapture = PiRGBArray(camera, size=(640, 480))
+with picamera.PiCamera() as camera:
+    camera.resolution = (320, 240)
+    camera.framerate = 24
+    image = np.empty((240, 320, 3), dtype=np.uint8)
+    camera.capture(image, 'bgr')
 
-# allow the camera to warmup
-time.sleep(0.1)
-
-n = 0
-m = 0
-l = 0
-
-# capture frames from the camera
-for frame in camera.capture_continuous(rawCapture, format='bgr', use_video_port=True):
-	# grab the raw NumPy array representing the image, then initialize the timestamp
-	# and occupied/unoccupied text
-    img = frame.array
-    image = cv.cvtColor(img, cv.COLOR_BGR2GRAY)
-
-    if signal == 1:
-        n = n + 1
-        if n == 1:
-            l = l + 1
-            name = print('product' + l)
-            cv.imwrite(name, img)
+    #start circledetection
+    image_gray = cv.cvtColor(image, cv.COLOR_BGR2GRAY)
+    circles = cv.HoughCircles(image_gray, cv.HOUGH_GRADIENT, 1, 20, np.array([]), 50, 60, 20, 30)
+    if circles is not None:
+        if len(circles.shape) == 3:
+            a, b, c = circles.shape
+            print("circles are detected") #adequate product
+            group = "adequate"
         else:
-            break
+            b = 0
+            print("circles not detected") #defective product
+            group = "defective"
+        for i in range(b):
+            cv.circle(image, (circles[0][i][0], circles[0][i][1]), circles[0][i][2], (0, 0, 255), 3, cv.LINE_AA)
 
-	    # show the frame
-        circles = cv.HoughCircles(image, cv.HOUGH_GRADIENT, 1, 20, np.array([]), 50, 60, 20, 30)
-        if circles is not None:
-            if len(circles.shape) == 3:
-                a, b, c = circles.shape
-                m = m + 1
-            else:
-                b = 0
-            for i in range(b):
-                cv.circle(img, (circles[0][i][0], circles[0][i][1]), circles[0][i][2], (0, 0, 255), 3, cv.LINE_AA)
-            cv.imshow("tracking", img)
-            key = cv.waitKey(1)
+#save result at log.txt
+log = open('/home/pi/workspace/file write/product log.txt', "a")
+log.write("\nproduct is " + group)
+log.close()
 
-	        # clear the stream in preparation for the next frame
-            rawCapture.truncate(0)
-
-	        # if the `esc` key was pressed, break from the loop
-            if key == 27:
-                break
-        cv.destroyAllWindows()
-    else:
-        if m / n > 0.9:
-            n = 1
-        else:
-            k = 0
-        n = 0
-
-        continue
+#save image
+cv.imwrite('product.jpg', image)
+cv.destroyAllWindows()
