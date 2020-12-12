@@ -26,7 +26,6 @@ for i in range(1, 3):
             a, b, c = circles.shape
         for j in range(b):
             cv.circle(img3, (circles[0][j][0], circles[0][j][1]), circles[0][j][2], (0, 0, 255), 3, cv.LINE_AA)
-
     cv.namedWindow('detected circles', cv.WINDOW_NORMAL)
     cv.imshow("detected circles", img2)
     print('r = ',circles[0][j][2])
