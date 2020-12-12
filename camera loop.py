@@ -39,9 +39,7 @@ for frame in camera.capture_continuous(rawCapture, format='bgr', use_video_port=
         if circles is not None:
             if len(circles.shape) == 3:
                 a, b, c = circles.shape
-
                 m = m + 1
-
             else:
                 b = 0
             for i in range(b):
