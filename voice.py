@@ -6,7 +6,7 @@ import serial
 import time
 
 #arduino serial function
-ser = serial.Serial('/dev/ttyUSB0', 9600, timeout = 1)
+ser = serial.Serial('/dev/rfcomm0', 9600, timeout = 1)
 
 #create mqtt client object(voice detector ip address)
 mqtt = mqtt.Client()
