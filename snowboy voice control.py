@@ -1,11 +1,13 @@
-#python3 demo.py resources/models/snowboy1.umdl resources/models/snowboy2.umdl
-#snowboydecoer.py must be at the same path with initiate.py
-
-
 import snowboydecoder
 import sys
 import signal
+import serial
+import time
 
+#arduino serial function
+ser = serial.Serial('/dev/ttyUSB0', 9600, timeout = 1)
+
+#snowboy function
 interrupted = False
 
 
@@ -33,14 +35,11 @@ sensitivity = [0.5]
 detector = snowboydecoder.HotwordDetector(models, sensitivity=sensitivity)
 
 def callback1(): #initiate detected
-    log = open('/home/pi/test.txt', "a")
-    log.write("start function\n")
-    log.close()
+    ser.write(str.encode('1'))
 
 def callback2(): #stop detected
-    log = open('/home/pi/test.txt', "a")
-    log.write("break loop\n")
-    log.close()
+    ser.write(str.encode('0'))
+
 
 callbacks = [callback1, callback2]
 
