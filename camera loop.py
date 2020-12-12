@@ -3,25 +3,72 @@ import numpy as np
 import cv2 as cv
 from pyfirmata import Arduino, util
 import time
+import paho.mqtt.client as mqtt
 
+#callback which is called when client get CONNACK response from server
+def connect_connect(client, userdata, flags, rc):
+    print("Connected with voice ip_/start" + str(rc))
+    client.subscribe("/control")
+
+#callback which is called when get PUBLISH message from server
+def control_message(client, userdata, msg):
+    global sign                                         #this code can go up
+    sign = msg.payload
+    #printing live status
+    if sign == b'111':
+        print("initiate detected_b\n")
+    elif sign == '111':
+        print("initiate detected_0\n")
+    elif sign == b'000' :
+        print("stop detected_b\n")
+    elif sign == '000' :
+        print("stop detected_0\n")
+
+#Create MQTT Client object
+controlsub = mqtt.Client()
+
+#connect to MQTT server
+controlsub.connect("203.252.47.59", 1883)             #voice detector ip address
+controlsub.on_connect = control_connect
+controlsub.on_message = control_message
+
+servopub = mqtt.Client()
+servopub.connect("localhost", 1883)
+
+controlpub = mqtt.Client()                         #send conveyor state to server
+controlpub.connect("localhost",1883)
+
+#Arduino serial communication
 board = Arduino('/dev/ttyUSB0')
 pin9_sensor = board.get_pin('d:9:i')
 it = util.Iterator(board)
 it.start()
 pin9_sensor.enable_reporting
-
 pin_code = pin9_sensor
 
+#make first loop to initiate
+sign = b'111'
+
+#mqtt signal unification as b'111'
+if sign == '111':
+    sign = b'111'
+
 n = 0 #int that make function taken only one time
-m = 0 #control int from voice detection
-p = 0
+p = 0 #product number counter
+
+#main loop
 while True:
-    if m == 0:
+    controlpub.loop_start()
+    controlsub.loop_start()
+    servopub.loop_start()
+    if sign == b'111':
+        controlpub.publish("/conveyorstate", "111111")
         if pin_code.read() == False:
-            n = n + 1
+            n += 1
             if n == 1:
-                p = p + 1
+                p += 1
                 #function start
+                print('start circle detection')
                 with picamera.PiCamera() as camera:
                     camera.resolution = (320, 240)
                     camera.framerate = 24
@@ -33,23 +80,30 @@ while True:
                     if circles is not None:
                         if len(circles.shape) == 3:
                             a, b, c = circles.shape
-                            group = "adequate"
+                            group = "1"#adequate
+                            servopub.publish("/servo", "22")          #same string size, 22222222 means product is adquate
                         else:
                             b = 0
-                            group = "defective"
+                            group = "0"#defective
+                            servopub.publish("/servo", "33")          #same string size, 33333333 means product is defective
                         for i in range(b):
                             cv.circle(image, (circles[0][i][0], circles[0][i][1]), circles[0][i][2], (0, 0, 255), 3, cv.LINE_AA)
                 #save result at log.txt
+                print('saving result')
                 p1 = str(p)
-                log = open('/home/pi/product log.txt', "a")
-                log.write('\nproduct' + p1 + ' is ' + group)
+                log = open('/home/pi/coding/product_result/results.txt', "a")
+                log.write('product' + p1 + ' is ' + group + '\n')
                 log.close()
-
                 #save image
-                name = 'product' + p1 + '.jpg'
-                cv.imwrite(name, image)
+                print('saving product picture')
+                name = p1 + '.jpg'
+                cv.imwrite(name, '/home/pi/coding/product_result', image)
                 cv.destroyAllWindows()
                 #function end
         else:
             n = 0
-        time.sleep(2)
+    controlpub.publish("/conveyorstate", "000000")
+    time.sleep(1)
+    controlpub.loop_stop()
+    controlsub.loop_stop()
+    servopub.loop_stop()
