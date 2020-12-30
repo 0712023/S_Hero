@@ -28,6 +28,7 @@
 - 가장 먼저 컨베이어 벨트 제어를 위해 음성인식의 결과값을 서버를 통하여 아두이노로 전송되며, 이 결과로 음성인식을 통한 컨베이어 벨트가 제어되도록 하였습니다. 또한 라즈베리파이 간 mqtt 통신을 통하여 음성인식의 데이터, 불량품 검출의 결과 데이터를 전송시켜 컨베이어 벨트 제어 및 서보모터의 불량품 검출 분류를 가능하게 하도록 하였습니다. 서버를 구축함으로 인해 스마트 팩토리의 시스템처럼 가동하여 모든 공정을 제어할 수 있도록 하였습니다.
 - 아래의 System Architecture에서 라즈베리파이 엣지 #1에서 음성인식을 통한 제어 명령을 전달하게 되면, 음성인식 후 제어 명령을 블루투스를 통해 전달하게 됩니다. 이 결과 컨베이어 벨트가 제어되며, 또한 라즈베리파이 디바이스#2에서 불량품 검출의 결괏값을 서버를 통해 디바이스#3으로 전송하고 그 결괏값에 따라 서보모터가 불량품을 분리해 내게 됩니다. 이러한 라즈베리파이 간의 mqtt는 와이파이를 통해서 통신하게 됩니다.
 <p align=center><img src=https://i.imgur.com/hWJth4y.png></p><br>
+
 ## Project Details
 ### 1. 하드웨어 구축
 컨베이어 벨트 구동을 위한 릴레이작동, 카메라실행 및 릴레이작동 및 정지를 위한 적외선 센서, 불량품 검출을 위한 서보모터 작동을 위해 아두이노를 사용하였고 이의 작동을위해 IDLE를  사용하였습니다. 이후 통신을 위해 라즈베리파이와 UART(Universal asynchronous receiver/transmitter)연결을 통해 Serial 통신으로 데이터를 송수신하도록 하였습니다.
@@ -99,6 +100,234 @@ if (in_data == '2'){
 //이는 불량품 검출의 데이터가 “불량품이라고 인식하였을 때 서보모터를 회전하여 불량품을 검출하는 작업을 한다.
 ```
 각각의 구성되어진 하드웨어는 라즈베리간 mqtt, 아두이노와 라즈베리파이의 UART 시리얼 통신, 아두이노와 라즈베리파이간의 블루투스 통신을 통하여 하나의 메커니즘으로 작동합니다. 블루투스 통신으로의 음성인식을 통해 제어되는 릴레이와 컨베이어 벨트에서 센서가 인식되면 카메라 작동을 위해서 3초간 컨베이어 벨트가 멈추고 불량품 검출을 위한 사진촬영 후 다시 재작동합니다. 이후 적외선센서가 인식 되었을 때 불량품의 판단 여부에 따라 서보모터가 작동하게 되며 불량품을 성공적으로 검출하게 되는 하나의 메커니즘을 형성하게 됩니다.
+### 2. 이미지 처리
+라즈베리파이3와 파이카메라 모듈을 결합하여 라즈베리파이3에서 불량품 검출에 필요한 사진을 찍을 수 있습니다. 파이카메라를 사용하기 위해서 따로 설치해야 하는 모듈은 없으며, 라즈베리파이3 보드 위의 코드에 결합하기만 하면 됩니다. 불량품 검출의 최종 목적이 원 형태의 인식 여부이기 때문에, 특정 사진에서 원의 형태를 인식하는 가장 좋은 방법은 파이썬3 환경에서 ‘OpenCV’ 모듈을 활용하는 것입니다. OpenCV 모듈은 라즈베리파이3의 카메라를 활용하여 사진을 찍거나, 저장, 불러오기, 보여주기, 원 그리기, 테두리 그리기, 등 다양한 분야에서 활용도가 높은 모듈입니다. 여기서 우리 팀이 해결하고자 하는 과제에 필요한 부분은, ‘사진에서 원 인식’, ‘사진에서 원 그리기’입니다. ‘사진에서 원 인식’은 메소드 ‘HoughCircles’를, ‘사진에서 원 그리기’는 메소드 ‘circle’을 사용하였습니다. 파이카메라를 통해 찍은 제품 사진에서 불량품인지, 정상제품인지 판단하는 기준은 프로젝트 진행에 있어서 최적의 방안을 찾기 위해 다음 세 가지 방법을 제시했습니다.
+#### 1) 검출된 원과 실제 제품 테두리의 넓이 차이 비교를 통한 오차율 계산<br>
+
+```python
+import cv2 as cv
+import numpy as np
+
+img1 = cv.imread('example.jpg', 0)
+img1 = cv.medianBlur(img1,5)
+img2 = img1.copy
+
+circles = cv.HoughCircles(img1, cv.HOUGH_GRADIENT, 1, 10, np.array([]), 100, 30, 1, 30)
+if circles is not None:
+    if len(circles.shape) < 3:
+        print('circles not detected')
+    else:
+        a, b, c = circles.shape
+    for j in range(b):
+        cv.circle(img3, (circles[0][j][0], circles[0][j][1]), circles[0][j][2], (0, 0, 255), 3, cv.LINE_AA)
+print('expected area = ', 3.14159*circles[0][j][2]**2)
+
+ret, th = cv.threshold(img1, 150, 255, cv.THRESH_BINARY)
+image, contours, hierarchy = cv.findContours(th, 1, 2)
+img3 = cv.drawContours(img1, contours, -1 (0, 255, 0), 3)
+area = cv.contourArea(contours[0])
+print('real area = ', area)
+```
+우선 ‘example.jpg’라는 사진에서 Houghcircle 메소드를 통해 검출된 원의 반지름을 구하여, 에 대입하여 원의 넓이를 구합니다. 또, 사진을 threshold 메소드를 통해 원으로 보이는 부분의 실제 모양을 그대로 따옵니다. Threshold 메소드는 사진에서 rgb값 중 지정된 값 이상의 색은 전부 검은색, 그 외는 모두 흰색으로 처리하게 해줍니다. 즉, 제품의 윗면 전체의 색과 컨베이어 벨트의 색과 대조하여, 제품의 윗면만 검은색으로 표시되게 한 후, 검은색으로 표시된 부분의 넓이를 ‘contourArea’ 메소드를 통해 구합니다. 각각 구해진 이론값과 실제 넓이를 비교하여, 이 오차율이 팀에서 정한 특정 % 이상이 된 제품을 불량품으로 규정하는 방법입니다.
+아래 사진에서 하나의 원에 대해 HoughCircle, contourArea 두 가지 방법으로 원의 넓이를 계산하면, 두 원의 오차는 약 17494.66 이고, 이는 약 6.7%의 오차가 발생했습니다.
+<p align=center><img src=https://i.imgur.com/tNz3YGW.png><br>실제 원 검출 사진<br><img src=https://i.imgur.com/PRTj5KN.png><br>오차율 계산 영역</p>
+하지만 이 방법은 Houghcircle, contourArea 두 메소드 각각 카메라의 흔들림, 사진의 낮은 화질, 등에서 오차가 발생할 가능성이 있고, 각각의 오차가 불량품인 제품을 정상제품이라고 오판할 가능성이 다소 있다고 판단하여 사용하지 않기로 결정했습니다.
+
+#### 2) 10장의 사진을 찍어 각 사진에 대해 원을 검출, 최종 원 검출율이 90% 이상일 경우 정상품
+```python
+from picamera.array import PiRGBArray
+from picamera import PiCamera
+import cv2 as cv
+import numpy as np
+camera = PiCamera()
+camera.resolution = (640, 480)
+camera.framerate = 32
+rawCapture = PiRGBArray(camera, size=(640, 480))
+time.sleep(0.1)
+n = 0
+m = 0
+l = 0
+for frame in camera.capture_continuous(rawCapture, format='bgr', use_video_port=True):
+    img = frame.array
+    image = cv.cvtColor(img, cv.COLOR_BGR2GRAY)
+    if signal == 1:
+        n = n + 1
+        if n == 1:
+            l = l + 1
+            name = print('product' + l)
+            cv.imwrite(name, img)
+        else:
+            break
+        circles = cv.HoughCircles(image, cv.HOUGH_GRADIENT, 1, 20, np.array([]), 50, 60, 20, 30)
+        if circles is not None:
+            if len(circles.shape) == 3:
+                a, b, c = circles.shape
+                m = m + 1
+            else:
+                b = 0
+            for i in range(b):
+                cv.circle(img, (circles[0][i][0], circles[0][i][1]), circles[0][i][2], (0, 0, 255), 3, cv.LINE_AA)
+            cv.imshow("tracking", img)
+            key = cv.waitKey(1)
+           rawCapture.truncate(0)
+            if key == 27:
+                break
+        cv.destroyAllWindows()
+    else:
+        if m / n > 0.9:
+            n = 1
+        else:
+            k = 0
+        n = 0
+        continue
+```
+우선 파이카메라를 통해 초당 32번의 사진을 찍어 사진마다 Houghcircle 메소드를 통해 원을 검출하고 이를 스크린을 통해 보여줍니다. 이러한 과정을 통해 스크린에서는 마치 실시간으로 원을 트래킹하는 스트리밍을 볼 수 있다는 장점이 있습니다. 시각적인 효과가 뛰어나기 때문에 오차율 계산이 적합하다면 원 인식 코드로 사용될 예정이었던 코드였습니다.<br>
+파이카메라 모듈에도 실시간 비디오 스트리밍을 할 방법이 있지만, 그 방법은 실제로 라즈베리파이3 환경에서 실행하기에는 성능이 충분하지 않아, 과부하가 걸릴 가능성이 컸고, 무엇보다 오차율 계산에 있어서 사진을 통해 스트리밍하는 방법에 비해 일관성이 떨어지기 때문에 사용하지 않았습니다.<br>
+작업 환경에서 적외선 센서로부터 제품이 카메라 앞에 도달하였다는 정보가 들어온 직후의 10개의 사진(프레임)을 검사하여, 10장의 사진 중 9장 이상의 사진에서 원이 검출된 제품을 정상제품의 기준으로 정하였습니다. 하지만 이 방법에서 ‘10장의 사진 중 9장’이라는 기준에서 9장이 그리 직관적이지 않고, 수많은 제품을 판단하는 과정에서 적절하지 못한 불량품 판단이 일어날 가능성이 큽니다. 또한, 컨베이어 벨트 위에서 10장의 사진을 찍는 동안, 제품이 이동하여 카메라 바로 밑이 아닌 약간 비스듬한 위치에서 찍힌 사진 또한 오차율 계산에 포함되게 되는데 이 때, 정상적인 제품임에도 타원형으로 사진이 찍힐 수 있어, 원 검출에 신빙성이 떨어지게 됩니다. 이러한 이유로 이 방법 또한 사용하지 않기로 결정했습니다.
+<p align=center><img src=https://i.imgur.com/i5ZHIpC.png><br>이동중에도 연속적으로 원 검출</p>
+
+#### 3) Hough circle 매소드 내 여러 변수들을 통한 원 인식
+```python
+import picamera
+import numpy as np
+import cv2 as cv
+from pyfirmata import Arduino, util
+import time
+import paho.mqtt.client as mqtt
+def connect_connect(client, userdata, flags, rc):
+    print("Connected with voice ip_/start" + str(rc))
+    client.subscribe("/control")
+def control_message(client, userdata, msg):
+    global sign
+    sign = msg.payload
+    if sign == b'111':
+        print("initiate detected_b\n")
+    elif sign == '111':
+        print("initiate detected_0\n")
+    elif sign == b'000' :
+        print("stop detected_b\n")
+    elif sign == '000' :
+        print("stop detected_0\n")
+controlsub = mqtt.Client()
+controlsub.connect("203.252.47.59", 1883)
+controlsub.on_connect = control_connect
+controlsub.on_message = control_message
+servopub = mqtt.Client()
+servopub.connect("localhost", 1883)
+controlpub = mqtt.Client()
+controlpub.connect("localhost",1883)
+board = Arduino('/dev/ttyUSB0')
+pin9_sensor = board.get_pin('d:9:i')
+it = util.Iterator(board)
+it.start()
+pin9_sensor.enable_reporting
+pin_code = pin9_sensor
+sign = b'111'
+if sign == '111':
+    sign = b'111'
+n = 0
+p = 0
+while True:
+    controlpub.loop_start()
+    controlsub.loop_start()
+    servopub.loop_start()
+    if sign == b'111':
+        controlpub.publish("/conveyorstate", "111111")
+        if pin_code.read() == False:
+            n = n + 1
+            if n == 1:
+                p = p + 1
+                with picamera.PiCamera() as camera:
+                    camera.resolution = (320, 240)
+                    camera.framerate = 24
+                    image = np.empty((240, 320, 3), dtype=np.uint8)
+                    camera.capture(image, 'bgr')
+                    image_gray = cv.cvtColor(image, cv.COLOR_BGR2GRAY)
+                        circles = cv.HoughCircles(image_gray, cv.HOUGH_GRADIENT, 1, 20, np.array([]), 50, 60, 20, 30)
+                    if circles is not None:
+                        if len(circles.shape) == 3:
+                            a, b, c = circles.shape
+                            group = "1"
+                            servopub.publish("/servo", "22")
+                        else:
+                            b = 0
+                            group = "0"
+                            servopub.publish("/servo", "33")
+                        for i in range(b):
+                            cv.circle(image, (circles[0][i][0], circles[0][i][1]), circles[0][i][2], (0, 0, 255), 3, cv.LINE_AA)
+                p1 = str(p)
+                log = open('/home/pi/coding/product_result/results.txt', "a")
+                log.write('product' + p1 + ' is ' + group + '\n')
+                log.close()
+                name = p1 + '.jpg'
+                cv.imwrite(name, '/home/pi/coding/product_result', image)
+                cv.destroyAllWindows()
+        else:
+            n = 0
+    controlpub.publish("/conveyorstate", "000000")
+    time.sleep(1)
+    controlpub.loop_stop()
+    controlsub.loop_stop()
+    servopub.loop_stop()
+```
+위 코드는 원래 단순히 하나의 제품 사진에 대해 HoughCircle 메소드를 통해 원이 검출되었는가, 되지 않았는가를 판단하여 정상제품, 불량품으로 각각 분류합니다. Houghcircle 메소드에 적용되는 변수들은 순서대로, (image, method, dp, minDist[, circles[, param1[, param2[,, minRadius[, maxRadius]]]]])로 나타내어지고 각각의 변수의 의미는 다음과 같습니다.
+- image : 8-bit single-channel 흑백 이미지.
+- method : 검출 방법. 현재는 HOUGH_GRADIENT가 있음.
+- dp : dp=1이면 Input Image와 동일한 해상도.
+- minDist : 검출한 원의 중심과의 최소거리. 값이 작으면 원이 아닌 것들도 검출이 되고, 너무 크면 원을 놓칠 수 있음.
+- param1 : 내부적으로 사용하는 canny edge 검출기에 전달되는 Paramter
+- param2 : 이 값이 작을 수록 오류가 높아짐. 크면 검출률이 낮아짐.
+- minRadius : 원의 최소 반지름.
+- maxRadius : 원의 최대 반지름.<br>
+
+이들 중 정상제품임을 판단할 중요한 변수는 param2, minRadius, maxRadius 세 가지입니다. 이 세 가지 변수들은 실제로 사진을 다수 찍어보면서 적절한 값을 찾아내는 방법을 통해 각각 60, 20, 30으로 설정하는 것이 가장 정확하다는 것을 알 수 있었습니다. 각각의 단위는 pixel이며, 해당 값은 파이카메라를 통해 찍는 사진의 크기(320x240)과 이를 통해 실제로 보이는 제품의 크기를 토대로 계산한 값입니다.<br>
+처리된 제품의 원 인식 결과에 해당하는 제품 사진과, 제품의 로그는 검출 즉시 라즈베리파이3 내부 경로에 저장되고, 곧바로 서버에 업로드되어, 책임자 등이 자유롭게 열람할 수 있습니다.<br>
+<p align=center><img src=https://i.imgur.com/iCAwgmZ.png></p>
+원을 검출하는 코드는 루프를 통해 무한히 돌아갑니다. 매 루프마다 제품이 카메라 앞에 도달하였는지에 대해서 아두이노 보드의 디지털 적외선 센서를 통해 정보를 받습니다. 아두이노 보드와 라즈베리파이3는 유선상의 시리얼 통신을 통해 정보를 전달합니다. 카메라 앞에 제품이 도달하였다는 신호를 받기 전까지 원 인식 코드는 실행되지 않고, 루프만 계속 돕니다. 하지만, 제품이 카메라 앞에 도달하였다는 신호를 받으면 원 인식 코드를 단 1회 실행하게 되고 다시 루프를 돕니다.<br>
+원 인식 코드를 실행하는 루프는 책임 사용자가 원하는 때에 실행할 수 있고, 또 원하는 때에 중지할 수 있어야 합니다. 그러한 on/off 스위치 역할을 하는 것이 바로 뒤에서 설명할 음성인식입니다. 음성인식은 원 인식 코드가 작동하고 있는 라즈베리파이3가 아닌 또 다른 라즈베리파이3에서 실행되고 있는데, 여기서 on에 해당하는 명령을 받으면 멈춰있는 루프를 작동시키게 하고, off에 해당하는 명령을 받으면, 동작하고 있는 루프를 무조건 정지시킵니다. 이 두 라즈베리파이3 사이의 통신은 mqtt를 통해서 작동합니다.<br>
+또한, 라즈베리파이3 내부에 저장된 제품 로그는 곧바로 서보모터를 돌리는 데 필요한 정보를 제공하기 위해 서보모터 라즈베리파이3로 mqtt통신을 통해 전달하게 됩니다.<br>
+
+### 3. 음성인식
+<p align=center><img src=https://i.imgur.com/nlWRLlm.png></p>
+ReSpeaker 4-Mic Array for Raspberry Pi는 4개의 마이크가 적용된 보드로서, 라즈베리파이3에 가장 최적화된 스피커입니다. 매우 높은 감도의 음성 탐지가 가능하여, jarvisfactory 팀의 음성인식에 필요한 장비입니다. 파이카메라와 달리 초기 설정을 해주어야 하는데, 필요한 모듈을 내려받아 간단하게 사용할 수 있습니다.<br>
+음성인식을 하는 방법에는 크게 두 가지가 있는데, 구글 어시스턴트(Google assistant)와 스노우보이(Snowboy)가 그것입니다.<br>
+
+- 구글 어시스턴트는 음성인식과, 인식된 음성을 문자로 변환하여, 이를 구글 어시스턴트 서버에 보내 적절한 대답을 해 주는 ‘비서’역할을 합니다. 설치는 actions on google을 통해 프로파일을 등록 후 라즈베리파이3와 같은 기기에서 사용할 수 있습니다. 구글 어시스턴트는 인공지능으로써 필요한 정보들을 음성 명령을 통해 수집하는 데에 큰 의미가 있으므로, 음성 명령을 내리면 피드백을 주는 단순명료한 작업에는 적절하지 못하기 때문에 사용하지 않았습니다.
+- 스노우보이는 음성 명령을 내리면 피드백을 주는 단순명료한 작업에 매우 적절한 모듈입니다. 스노우보이는 Kitt.ai에서 개발한 무료 라이센스 프로그램으로, 개인 사용자가 음성 녹음을 통해 특정 단어 패턴에 대한 프로파일을 생성하면, 라즈베리파이3와 같은 개인 기기에서 다양한 환경(파이썬2, 파이썬3, C, C+, 등등)에서 프로파일에 해당하는 단어가 인식되면 그에 대한 피드백이 작동합니다.
+```python
+import snowboydecoder
+import sys
+import signal
+import paho.mqtt.client as mqtt
+import serial
+import time
+ser = serial.Serial('/dev/ttyUSB0', 9600, timeout = 1)
+mqtt = mqtt.Client()
+mqtt.connect("localhost", 1883)
+interrupted = False
+def signal_handler(signal, frame):
+    global interrupted
+    interrupted = True
+def interrupt_callback():
+    global interrupted
+    return interrupted
+models = sys.argv[1:]
+signal.signal(signal.SIGINT, signal_handler)
+sensitivity = [0.5]
+detector = snowboydecoder.HotwordDetector(models, sensitivity=sensitivity)
+def callback1():
+    mqtt.publish("/control", "111")
+    ser.write(str.encode('1'))
+def callback2():
+    mqtt.publish("/control", "000")
+    ser.write(str.encode('0'))
+mqtt.loop(2)
+callbacks = [callback1, callback2]
+detector.start(detected_callback=callbacks, interrupt_check=interrupt_callback, sleep_time=0.03)
+detector.terminate()
+```
+이 프로젝트에서는 전체 동작 과정을 ‘실행’하는 것과, ‘중지’하는 것에 우선 주안점을 두고, 각각의 명령어를 ‘시작해’와 ‘중지해’로 녹음하여 프로파일을 생성하였습니다. 또, 그 단어가 인식되었을 때 실행에 해당하는 신호와 중지에 해당하는 신호를 시리얼 통신으로는 컨베이어 벨트와 연결된 아두이노 보드에, mqtt통신으로는 원 인식 라즈베리파이3에 전달되도록 합니다. 그렇게 함으로써 처음 시작 명령을 받게 되면 컨베이어 벨트와 원 인식 코드가 작동하게 되고, 도중에 중지해야 할 상황에서 중지 명령을 받게 되면 컨베이어 벨트와 원 인식 코드가 작동을 중지하게 됩니다.
+
 ## Demo
 
 ## Review
