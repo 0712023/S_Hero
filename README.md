@@ -353,7 +353,7 @@ detector.terminate()
 
 -  라즈베리파이와 아두이노 보드에서 블루투스 / 와이파이 통신 포트 열었습니다. 두 가지 통신 방법 중, 하나의 와이파이 공유기 아래에 있을 시 통신이 편리하다는 점 때문에 와이파이 통신으로 결정하게 되었습니다. MQTT통신 방식으로 라즈베리파이에서 아두이노로 제어 신호를 보냈는데, 라즈베리파이가 MQTT broker, 노트북이 MQTT client로 설정하여 아두이노 제어를 시도하였습니다.<br>
 - 이후 mqtt통신을 위해 mosquitto라는 오픈 서비스를 이용하였습니다. Mosquitto는 mqtt에 필요한 기본적인 요소를 모두 지원하며, 라즈베리파이에는 mqtt통신을 가능하게 하기 위해서 paho python client라는 mqtt 라이브러리를 사용하였습니다.
-- 마지막으로 라즈베리 파이간의 통신 및 라즈베리파이와 아두이노의 통신을 처리했습니다.<center><br>라즈베리파이_1 (MQTT server & client)<br>&#8597;<br>라즈베리파이_2 (MQTT client & server)<br>&#8597;<br>라즈베리 파이_3 (broker & server with servo motor)</center><br>구독하고 있는 라즈베리 파이에서는 같은 topic과 정해진 ip로 발행하고 있는 라즈베리파이의 신호를 읽을 수 있으며, 이를 이용해 라즈베리 파이에 구축된 서버에서 제어권을 갖게 했습니다.
+- 마지막으로 라즈베리 파이간의 통신 및 라즈베리파이와 아두이노의 통신을 처리했습니다.<p align=center><br>라즈베리파이_1 (MQTT server & client)<br>&#8597;<br>라즈베리파이_2 (MQTT client & server)<br>&#8597;<br>라즈베리 파이_3 (broker & server with servo motor)</p><br>구독하고 있는 라즈베리 파이에서는 같은 topic과 정해진 ip로 발행하고 있는 라즈베리파이의 신호를 읽을 수 있으며, 이를 이용해 라즈베리 파이에 구축된 서버에서 제어권을 갖게 했습니다.
 <p align=center><img src=https://i.imgur.com/5hYV7Sk.png><br>cmd에서 mqtt를 구독/발행</p>
 
 이후 cmd에서 라즈베리파이의 ip를 구독함으로써 이루던 통신을 python 코드로 진행 가능하도록 바꾸었습니다.
