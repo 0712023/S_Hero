@@ -393,6 +393,14 @@ Modbus Node-RED 노드를 활용하여 아두이노-서버-라즈베리파이간
 <p align=center><img src=https://i.imgur.com/IL0vU2U.png><br>Node-RED를 통한 시리얼 통신</p>
 
 ## Demo
+##### 1. alpha 버전 시스템 완성
+[![](https://img.youtube.com/vi/GobDD7CxsH4/0.jpg)](https://www.youtube.com/watch?v=GobDD7CxsH4)
+##### 1. beta 버전 시스템 완성
+[![](https://img.youtube.com/vi/tupZThvQLtQ/0.jpg)](https://www.youtube.com/watch?v=tupZThvQLtQ)
+##### 1. 서버를 통한 제품 사진 확인
+[![](https://img.youtube.com/vi/T5GU1vwoyIE/0.jpg)](https://www.youtube.com/watch?v=T5GU1vwoyIE)
+##### 1. 최종 발표회 시연
+[![](https://img.youtube.com/vi/zX8AATmPfKY/0.jpg)](https://www.youtube.com/watch?v=zX8AATmPfKY)
 
 ## Research Prospects
 중소기업들은 스마트팩토리 구축을 위해 정부의 스마트팩토리 관련 지원금에도 불구하고 대기업 중심의 최상급 서비스보다는 중소기업 맞춤형 스마트 팩토리가 필요하다고 생각합니다.<br>
