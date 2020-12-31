@@ -346,10 +346,10 @@ detector.terminate()
 <p align=center><img src=https://i.imgur.com/daFzJDm.png><br>Node-RED를 활용한 I/O 포트 제어</p>
 
 #### 3) MQTT 제어
-- 서버에서 MQTT broker를 열고, Node-RED가 MQTT client 역할을 하여 통신하는 모습입니다. 차례대로 json 파일에 저장된 데이터를 읽어 데이터에 따라 디버깅하는 플로우, 외부 mqtt 브로커 (websocket) 통신 플로우, 내부 mqtt(nodered) 통신 플로우입니다.
+- 서버에서 MQTT broker를 열고, Node-RED가 MQTT client 역할을 하여 통신하는 모습입니다. 차례대로 json 파일에 저장된 데이터를 읽어 데이터에 따라 디버깅하는 플로우, 외부 mqtt 브로커 (websocket) 통신 플로우, 내부 mqtt(Node-RED) 통신 플로우입니다.
 <p align=center><img src=https://i.imgur.com/xhTfUXb.png></p>
 
-이와 같은 플로우들로 nodered로 아두이노 포트를 쉽게 제어할 수 있는 것과, mqtt 통신이 가능하다는 것을 확인하였습니다.
+이와 같은 플로우들로 Node-RED로 아두이노 포트를 쉽게 제어할 수 있는 것과, mqtt 통신이 가능하다는 것을 확인하였습니다.
 
 -  라즈베리파이와 아두이노 보드에서 블루투스 / 와이파이 통신 포트 열었습니다. 두 가지 통신 방법 중, 하나의 와이파이 공유기 아래에 있을 시 통신이 편리하다는 점 때문에 와이파이 통신으로 결정하게 되었습니다. MQTT통신 방식으로 라즈베리파이에서 아두이노로 제어 신호를 보냈는데, 라즈베리파이가 MQTT broker, 노트북이 MQTT client로 설정하여 아두이노 제어를 시도하였습니다.<br>
 - 이후 mqtt통신을 위해 mosquitto라는 오픈 서비스를 이용하였습니다. Mosquitto는 mqtt에 필요한 기본적인 요소를 모두 지원하며, 라즈베리파이에는 mqtt통신을 가능하게 하기 위해서 paho python client라는 mqtt 라이브러리를 사용하였습니다.
