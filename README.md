@@ -394,7 +394,8 @@ client.connect("localhos
 Modbus Node-RED 노드를 활용하여 아두이노-서버-라즈베리파이간의 통신이 가능한 것을 확인할 수 있습니다. 따라서 라즈베리파이에서 인식한 명령이 아두이노의 시리얼 포트로 전송 가능하게 되었습니다.
 <p align=center><img src=https://i.imgur.com/IL0vU2U.png><br>Node-RED를 통한 시리얼 통신</p>
 
-## Demo
+## Demo Video
+클릭하여 비디오 재생
 ##### 1. alpha 버전 시스템 완성
 [![](https://img.youtube.com/vi/tupZThvQLtQ/0.jpg)](https://www.youtube.com/watch?v=tupZThvQLtQ)
 ##### 1. beta 버전 시스템 완성
