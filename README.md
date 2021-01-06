@@ -1,4 +1,28 @@
 # Smart Factory Monitoring System
+## Keywords
+## Contents
+- Project Synopsis
+- Tools
+  - Platform
+  - Sensor
+  - Software
+- Big Picture
+- Project Details
+  - 하드웨어 구축
+    - 컨베이어 벨트
+    - 적외선 센서 연결
+      - 카메라 실행용 센서
+      - 컨베이어 벨트 제어용 센서
+      - 서보모터 제어용 센서
+    - 서보모터
+  - 이미지 처리
+    - 검출된 원과 실제 제품 테두리의 넓이 차이 비교를 통한 오차율 계산
+    - 10장의 사진을 찍어 각 사진에 대해 원을 검출, 최종 원 검출율이 90% 이상일 경우 정상품
+    - Hough circle 메소드 내 여러 변수들을 통한 원 인식
+  - 음성 인식
+- Demo
+- Review
+
 ## Project Synopsis
 - 행사명 : 2018 성균관대학교 실전문제해결형 S-HERO
 - 주최 : 성균관대학교 실전문제 해결형 S-HERO 공학인재 양성 사업단
